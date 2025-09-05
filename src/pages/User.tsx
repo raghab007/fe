@@ -7,7 +7,7 @@ interface IUser {
     name: string;
     _id: string;
     email: string;
-    age: number;
+    age: string; // fix type issue by changing from number to string
     address: string;
     phone: string;
 }
@@ -20,9 +20,6 @@ function User() {
     const pageSize = 5;
     let { data: users, currentPage, setCurrentPage, nextData: nextUsers, previousData: previousUsers, count, error, loading, refetch } = usePaginatedFetchData(`/api/users`);
 
-    if (loading) {
-        return <h1>Loading...</h1>
-    }
     const totalPages = Math.ceil(count / pageSize)
     const [chatbot, setChatbot] = useState(false);
     const [chatMessages, setChatMessages] = useState<Array<{ role: string, content: string }>>([]);
@@ -31,11 +28,11 @@ function User() {
     // Filter users based on search term
     useEffect(() => {
         if (users && users.length > 0) {
+            const typedUsers = users as IUser[];
             if (searchTerm === "") {
-                setFilteredUsers(users);
+                setFilteredUsers(typedUsers);
             } else {
-                //@ts-ignore
-                const filtered = users.filter(user =>
+                const filtered = typedUsers.filter((user: IUser) =>
                     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     user.phone.includes(searchTerm) ||
@@ -45,7 +42,7 @@ function User() {
                 setFilteredUsers(filtered);
             }
         }
-    }, [searchTerm]);
+    }, [searchTerm, users]);
 
     // Initialize chatbot with welcome message
     useEffect(() => {
@@ -131,7 +128,7 @@ function User() {
             const response = await axiosInstance.delete(`/api/users/${id}`)
             console.log(response.data.message)
             alert("User deleted successfully")
-            window.location.reload();
+            refetch();
         } catch (error) {
             console.log(error)
             alert("Error while deleting user")

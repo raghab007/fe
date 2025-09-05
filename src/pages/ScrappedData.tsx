@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { usePaginatedFetchData } from "../hooks/user";
-import axios from "axios";
 import { axiosInstance } from "../api/apis";
 
 function ScrappedData() {

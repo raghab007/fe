@@ -39,7 +39,7 @@ function UpdateUserForm({ user }: { user: IUser }) {
                 age: parseInt(formData.age)
             };
 
-            const response = await axiosInstance.put(`/api/users/${user._id}`, updateData, {
+            await axiosInstance.put(`/api/users/${user._id}`, updateData, {
                 headers: {
                     "Content-Type": "application/json"
                 }

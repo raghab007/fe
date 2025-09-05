@@ -1,14 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { axiosInstance } from "../api/apis";
 
 function usePaginatedFetchData(url: string) {
-    const [data, setData] = useState(null)
+    const [data, setData] = useState<any[] | null>(null)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [currentPage, setCurrentPage] = useState(1)
-    const [nextData, setNextData] = useState(null)
-    const [previousData, setPreviousData] = useState(null)
-    const [count, setCount] = useState(null)
+    const [nextData, setNextData] = useState<any[] | null>(null)
+    const [previousData, setPreviousData] = useState<any[] | null>(null)
+    const [count, setCount] = useState<number>(0)
     const pageSize = 5;
     const fetchData = async () => {
         setLoading(true);
