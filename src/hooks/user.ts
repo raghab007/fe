@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../api/apis";
 
-function usePaginatedFetchData(url: string) {
+function usePaginatedFetchData(url: string, initialPageSize: number = 5) {
     const [data, setData] = useState<any[] | null>(null)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -9,7 +9,7 @@ function usePaginatedFetchData(url: string) {
     const [nextData, setNextData] = useState<any[] | null>(null)
     const [previousData, setPreviousData] = useState<any[] | null>(null)
     const [count, setCount] = useState<number>(0)
-    const pageSize = 5;
+    const [pageSize, setPageSize] = useState(initialPageSize);
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -36,11 +36,57 @@ function usePaginatedFetchData(url: string) {
         }
     };
 
+    // Enhanced pagination functions
+    const goToPage = (page: number) => {
+        if (page >= 1 && page <= Math.ceil(count / pageSize)) {
+            setCurrentPage(page);
+        }
+    };
+
+    const nextPage = () => {
+        if (nextData && nextData.length > 0) {
+            setCurrentPage(current => current + 1);
+        }
+    };
+
+    const previousPage = () => {
+        if (previousData && previousData.length > 0) {
+            setCurrentPage(current => current - 1);
+        }
+    };
+
+    const changePageSize = (newSize: number) => {
+        setPageSize(newSize);
+        setCurrentPage(1); // Reset to first page when changing page size
+    };
+
     useEffect(() => {
         fetchData();
-    }, [currentPage]);
+    }, [currentPage, pageSize]);
 
-    return { data, currentPage, setCurrentPage, nextData, previousData, count, loading, error, refetch: fetchData };
+    const totalPages = Math.ceil(count / pageSize);
+    const hasNextPage = nextData && nextData.length > 0;
+    const hasPreviousPage = previousData && previousData.length > 0;
+
+    return { 
+        data, 
+        currentPage, 
+        setCurrentPage, 
+        nextData, 
+        previousData, 
+        count, 
+        loading, 
+        error, 
+        refetch: fetchData,
+        pageSize,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+        goToPage,
+        nextPage,
+        previousPage,
+        changePageSize
+    };
 }
 
 export { usePaginatedFetchData };

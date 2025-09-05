@@ -3,10 +3,24 @@ import { usePaginatedFetchData } from "../hooks/user";
 import { axiosInstance } from "../api/apis";
 
 function ScrappedData() {
-    const { data, currentPage, setCurrentPage, nextData, previousData, count, loading, error, refetch } = usePaginatedFetchData('/web')
+    const { 
+        data, 
+        currentPage, 
+        count, 
+        loading, 
+        error, 
+        refetch,
+        pageSize,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+        goToPage,
+        nextPage,
+        previousPage,
+        changePageSize
+    } = usePaginatedFetchData('/web', 10);
 
     const searchRef = useRef<HTMLInputElement>(null)
-
     const [webLoading, setWebLoading] = useState(false);
 
     if (loading) {
@@ -15,20 +29,6 @@ function ScrappedData() {
 
     if (error) {
         return <h1>Something went wrong..</h1>
-    }
-
-    const totalPages = Math.ceil(count / 10);
-
-    function nextPage() {
-        if (nextData && nextData.length > 0) {
-            setCurrentPage(current => current + 1)
-        }
-    }
-
-    function previousPage() {
-        if (previousData && previousData.length > 0) {
-            setCurrentPage(current => current - 1)
-        }
     }
 
 
@@ -165,54 +165,148 @@ function ScrappedData() {
         </div>
 
 
-        {/* Pagination - Only show if not searching */}
-        {data && (
+        {/* Enhanced Pagination */}
+        {data && data.length > 0 && (
             <div className="mt-6">
-                <div className="bg-white rounded-lg shadow border border-gray-200 px-4 py-3 flex items-center justify-between">
-                    <div className="flex-1 flex justify-between items-center sm:hidden">
-                        <button
-                            onClick={previousPage}
-                            disabled={currentPage === 1}
-                            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            Previous
-                        </button>
-                        <div className="text-sm text-gray-700">
-                            Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                <div className="bg-white rounded-lg shadow border border-gray-200 px-6 py-4">
+                    {/* Page Size Selector */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                            <label htmlFor="pageSize" className="text-sm text-gray-700">Show:</label>
+                            <select
+                                id="pageSize"
+                                value={pageSize}
+                                onChange={(e) => changePageSize(Number(e.target.value))}
+                                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
+                            </select>
+                            <span className="text-sm text-gray-700">per page</span>
                         </div>
-                        <button
-                            onClick={nextPage}
-                            disabled={currentPage >= totalPages}
-                            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage >= totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                        >
-                            Next
-                        </button>
+                        <div className="text-sm text-gray-700">
+                            Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                            <span className="font-medium">{Math.min(currentPage * pageSize, count)}</span> of{' '}
+                            <span className="font-medium">{count}</span> results
+                        </div>
                     </div>
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                        {/* <div>
-                            <p className="text-sm text-gray-700">
-                                Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium">{Math.min(currentPage * pageSize, count)}</span> of{' '}
-                                <span className="font-medium">{count}</span> results
-                            </p>
-                        </div> */}
-                        <div>
+
+                    {/* Pagination Controls */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        {/* Mobile View */}
+                        <div className="flex justify-between items-center sm:hidden">
+                            <button
+                                onClick={previousPage}
+                                disabled={!hasPreviousPage}
+                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md transition-colors ${
+                                    !hasPreviousPage 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Previous
+                            </button>
+                            <div className="text-sm text-gray-700">
+                                Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                            </div>
+                            <button
+                                onClick={nextPage}
+                                disabled={!hasNextPage}
+                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md transition-colors ${
+                                    !hasNextPage 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                            >
+                                Next
+                                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Desktop View */}
+                        <div className="hidden sm:flex sm:items-center sm:justify-between w-full">
+                            {/* Go to Page Input */}
+                            <div className="flex items-center space-x-2">
+                                <span className="text-sm text-gray-700">Go to page:</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={totalPages}
+                                    value={currentPage}
+                                    onChange={(e) => {
+                                        const page = Number(e.target.value);
+                                        if (page >= 1 && page <= totalPages) {
+                                            goToPage(page);
+                                        }
+                                    }}
+                                    className="border border-gray-300 rounded-md px-2 py-1 text-sm w-16 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">of {totalPages}</span>
+                            </div>
+
+                            {/* Navigation Buttons */}
                             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                 <button
-                                    onClick={previousPage}
-                                    // disabled={currentPage === 1}
-                                    className={`relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                                    onClick={() => goToPage(1)}
+                                    disabled={currentPage === 1}
+                                    className={`relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 text-sm font-medium transition-colors ${
+                                        currentPage === 1 
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                    }`}
                                 >
-                                    Previous
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                                    </svg>
                                 </button>
-                                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                    Page {currentPage} of {totalPages}
+                                <button
+                                    onClick={previousPage}
+                                    disabled={!hasPreviousPage}
+                                    className={`relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium transition-colors ${
+                                        !hasPreviousPage 
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                    }`}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                    {currentPage}
                                 </span>
                                 <button
                                     onClick={nextPage}
-                                    // disabled={currentPage >= totalPages}
-                                    className={`relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${currentPage >= totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                                    disabled={!hasNextPage}
+                                    className={`relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium transition-colors ${
+                                        !hasNextPage 
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                    }`}
                                 >
-                                    Next
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => goToPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                    className={`relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 text-sm font-medium transition-colors ${
+                                        currentPage === totalPages 
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                            : 'bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                    }`}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                                    </svg>
                                 </button>
                             </nav>
                         </div>
