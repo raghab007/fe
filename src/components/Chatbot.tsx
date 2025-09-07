@@ -8,6 +8,9 @@ interface Message {
     content: string;
     timestamp: Date;
     isTyping?: boolean;
+    data?: any[];
+    operation?: string;
+    count?: number;
 }
 
 interface ChatbotProps {
@@ -87,17 +90,13 @@ function Chatbot({ isOpen, onClose, onRefresh }: ChatbotProps) {
             // Send to backend
             const response = await axiosInstance.get(`/chat/${encodeURIComponent(userMessage)}`);
 
-            let responseContent;
-            if (response.data.users) {
-                responseContent = `${response.data.message}\n\n📊 **Users found:**\n${JSON.stringify(response.data.users, null, 2)}`;
-            } else {
-                responseContent = response.data.message;
-            }
-
-            // Add bot response
+            // Add bot response with data if available
             addMessage({
                 role: 'assistant',
-                content: responseContent
+                content: response.data.message,
+                data: response.data.data || response.data.users,
+                operation: response.data.operation,
+                count: response.data.count
             });
 
             // Refresh data if operation was successful
@@ -134,6 +133,61 @@ function Chatbot({ isOpen, onClose, onRefresh }: ChatbotProps) {
                 )}
             </div>
         ));
+    };
+
+    const renderUserData = (data: any[]) => {
+        if (!data || data.length === 0) return null;
+
+        return (
+            <div className="mt-3 space-y-2">
+                <div className="text-xs font-medium text-gray-600 mb-2">📊 Found {data.length} user(s):</div>
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                    {data.map((user, index) => (
+                        <div key={user._id || index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <span className="text-xs font-medium text-blue-600">
+                                                {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-900">{user.name || 'Unknown'}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 space-y-1">
+                                        {user.email && (
+                                            <div className="flex items-center space-x-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                                </svg>
+                                                <span>{user.email}</span>
+                                            </div>
+                                        )}
+                                        {user.phone && (
+                                            <div className="flex items-center space-x-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                </svg>
+                                                <span>{user.phone}</span>
+                                            </div>
+                                        )}
+                                        {user.address && (
+                                            <div className="flex items-center space-x-1">
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <span>{user.address}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     };
 
     const TypingIndicator = () => (
@@ -211,6 +265,12 @@ function Chatbot({ isOpen, onClose, onRefresh }: ChatbotProps) {
                                 <div className="text-sm leading-relaxed">
                                     {formatMessage(message.content)}
                                 </div>
+                                
+                                {/* Render user data if available */}
+                                {message.role === 'assistant' && message.data && message.operation === 'read' && (
+                                    renderUserData(message.data)
+                                )}
+                                
                                 <div className={`text-xs mt-2 ${
                                     message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                                 }`}>
