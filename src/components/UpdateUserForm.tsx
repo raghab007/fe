@@ -2,6 +2,7 @@ import { useState } from "react";
 import { InputWithLabel } from "./InputWithLabel";
 import type { IUser } from "../pages/User";
 import { axiosInstance } from "../api/apis";
+import { useToast } from "./Toast";
 
 
 interface UpdateFormData {
@@ -20,6 +21,7 @@ function UpdateUserForm({ user }: { user: IUser }) {
         phone: user.phone,
         age: user.age.toString()
     });
+    const { showToast } = useToast();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -45,11 +47,11 @@ function UpdateUserForm({ user }: { user: IUser }) {
                 }
             });
 
-            alert("User updated successfully!");
+            showToast("User updated successfully!", "success");
             window.location.reload();
         } catch (error) {
             console.log(error);
-            alert("Error while updating user");
+            showToast("Error while updating user", "error");
         }
     }
 
